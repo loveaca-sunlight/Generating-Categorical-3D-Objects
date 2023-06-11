@@ -1,0 +1,81 @@
+batch_size: 32
+batch_size_val: 8
+num_workers: 8
+max_epochs: 301
+epochs_per_checkpoint: 10
+epochs_per_validation: 10
+#resume_from: checkpoints/neusmlp_hydrant/last.ckpt
+base_log_dir: log/neusmlp_hydrant_nor
+
+height: &h 128
+width: &w 128
+
+work_dir: "checkpoints/"
+
+vali_mesh: True
+vali_near: [-1.,-1.,-1.]
+vali_far: [1.,1.,1.]
+
+dataset:
+  root: "/opt/data/private/CO3D"
+  category: "hydrant"
+
+  dataset_len: 200
+  dataset_len_val: 1
+
+  mask_thr: 0.05
+  edge_thr: 0.8
+
+  seq_name: &sn "427_60021_116224" 
+  #"116_13660_28980"
+  #"427_60021_116224"
+
+  curriculum_config:
+    type: "fixed"
+    seq_list: [*sn]
+
+  val_follows_train: true
+
+model:
+  type: "neus_model"
+
+  height: *h
+  width: *w
+
+  n_pts_per_ray: 64
+  n_pts_importance: 64
+  n_rays_per_image: 48
+  min_depth: 8.0
+  max_depth: 8.0
+  stratified: True
+  stratified_test: False
+  chunk_size_test: 4800
+  density_noise_std: 0.0
+  up_sample_steps: 4
+
+  mask_image: true
+
+  implicit_function:
+    type: "neus_mlp_res"
+    n_harmonic_functions_xyz: 10
+    n_harmonic_functions_dir: 6
+    n_hidden_neurons_xyz: 192
+    n_hidden_neurons_dir: 192
+    n_blocks_xyz: 3
+    n_blocks_dir: 0
+    densities_only: false
+    density_activation: "softplus"
+    norm: False
+  raymarcher:
+    type: "sdfnerfmarcher"
+    init_val: 0.3
+
+optimizer:
+  lr: 1.0e-4
+  milestones: [60, 120]
+  gamma: 0.5
+  accumulate_grad_batches: 1
+
+loss:
+  weights_mask: 0.4
+  weights_igr: 0.01

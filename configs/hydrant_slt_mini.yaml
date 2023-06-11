@@ -1,0 +1,68 @@
+batch_size: 48
+batch_size_val: 8
+num_workers: 4
+max_epochs: 300
+epochs_per_checkpoint: 10
+epochs_per_validation: 1
+#resume_from: /test/3D_Category/checkpoints/hydrant_sltmlp/last.ckpt
+
+height: &h 128
+width: &w 128
+
+work_dir: "checkpoints/"
+
+dataset:
+  root: "/opt/data/private/CO3D"
+  category: "hydrant"
+
+  dataset_len: 400
+  dataset_len_val: 4
+
+  mask_thr: 0.05
+  edge_thr: 0.0
+
+model:
+  height: *h
+  width: *w
+
+  n_pts_per_ray: 64
+#  n_pts_per_ray_fine: 32
+  n_rays_per_image: 32
+  min_depth: 8.0
+  max_depth: 8.0
+  stratified: True
+  stratified_test: False
+  chunk_size_test: 4800
+  density_noise_std: 0.0  # ignored here
+
+  mask_image: true
+
+  n_transform_ways: &t 4
+  full_transform: &f true
+
+  match_keys: ["top", "down", "left", "right"]
+  match_tol: 0.25
+
+  template_weights: "checkpoints/neusmlp_hydrant_nor/last.ckpt"
+  #"checkpoints/neusmlp_hydrant_nor2/epoch=9-step=2000.ckpt"
+  #"checkpoints/neusmlp_hydrant_nor/last.ckpt"
+
+  implicit_function:
+    type: "slt_mlp"
+    n_harmonic_functions_xyz: 10
+    n_hidden_neurons_xyz: 192
+    n_blocks_xyz: 3
+    n_transforms: *t
+    density_activation: "softplus"
+    norm: False
+
+optimizer:
+  lr: 0.05
+  momentum: 0.9
+
+  milestones: [150, 250]
+  gamma: 0.5
+
+loss:
+  match_loss_coef: 0.7
+  val_match_loss_coef: 0.7

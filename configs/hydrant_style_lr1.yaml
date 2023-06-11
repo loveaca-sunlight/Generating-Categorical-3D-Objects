@@ -1,0 +1,120 @@
+batch_size: 1
+batch_size_val: 1
+num_workers: 8
+max_epochs: 1550
+style_epochs: 30
+epochs_per_checkpoint: 50
+epochs_per_validation: 50
+#resume_from: checkpoints/hydrant_style/last.ckpt
+base_log_dir: log/val_style_mesh
+
+height: &h 128
+width: &w 128
+
+work_dir: "checkpoints/"
+
+vali_mesh: False
+vali_near: [-1.,-1.,-1.]
+vali_far: [1.,1.,1.]
+
+gradient_clip_val: 2.0
+
+dataset:
+  root: "/opt/data/private/CO3D"
+  category: "hydrant"
+  style_path: "wikiart"
+
+  dataset_len: 400  # ignored when train
+  dataset_len_val: 4
+
+  mask_thr: 0.05
+
+model:
+  type: "style_neus_cat_model"
+
+  height: *h
+  width: *w
+
+  n_pts_per_ray: 64
+  n_pts_importance: 32
+  up_sample_steps: 2
+  n_rays_per_image: 64
+  min_depth: 8.0
+  max_depth: 8.0
+  stratified: True
+  stratified_test: False
+  chunk_size_test: 4800
+  density_noise_std: 0.0
+  ray_sampler_config: 'square'
+
+  pairs_per_image: 128
+  epsilon: 0.2
+
+  mask_image: true
+
+  weighted_mse: false
+
+  n_sources: [1]
+
+  best_transforms: "checkpoints/hydrant_slt_mini/best.pth"
+  hyper_weights: checkpoints/hydrant_hyper_igr/epoch=1199-step=79200.ckpt
+  encoder_weights: "StyleVAE"
+
+  implicit_function:
+    type: "as2_neus_mlp_res"
+    n_harmonic_functions_xyz: 10
+    n_harmonic_functions_dir: 4
+    dim_hidden_density: 192
+    dim_hidden_diffuse: 192
+    dim_hidden_deformer: &d 192
+    dim_middle_diffuse: 48
+    n_blocks_density: 3
+    n_blocks_diffuse: 1  # 2
+    norm: false
+    shape_code_dim: &s 512
+    color_code_dim: &c 512
+    hyper_dim_hidden_diffuse: 224
+    hyper_norm: false
+
+  deformable_config:
+    n_harmonic_functions: 10
+    dim_hidden: *d
+    dim_middle: 48
+    n_blocks: 2
+    norm: false
+    shape_code_dim: *s
+    hyper_dim_hidden: 224
+    hyper_norm: false
+
+  encoder_config:
+    type: "mean_encoder"
+    n_layers: 18
+    shape_code_dim: *s
+    color_code_dim: *c
+
+optimizer:
+  lr: 0.
+  template_lr: 0.
+  transform_lr: 0.
+  encoder_lr: 0.
+  encoder2_lr: 0.
+  shapepro_lr: 2.0e-4
+  hyper_shape_lr: 0.
+  hyper_color_lr: 5.0e-4
+
+  accumulate_grad_batches: 4
+
+scheduler:
+  warmup_t: 20
+  warmup_lr_init: 1.0e-5
+  decay_t: 155000
+  decay_rate: 0.1 #0.5
+
+loss:
+  rgb: 1
+  style: 8 #15
+  content: 1
+  #weights_reg_coef: 0.6
+  #specular_reg_coef: 0.0  # 0.6
+  #weights_igr: 0.1
+#  weights_norm_coef: 0.0002
